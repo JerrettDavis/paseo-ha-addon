@@ -17,6 +17,10 @@
 #      the shim tag; the 10-server-id hook derives the same ID for the same
 #      HA UUID + hostname, another for another UUID, a random one without a
 #      UUID, and never changes an existing file
+#   f) the image's ps supports the procps options Paseo's terminal worker uses;
+#      a program in a Paseo terminal keeps running across `paseo daemon
+#      restart` and across a SIGKILL crash of the supervisor and daemon (s6
+#      restarts them), and the new daemon lists its terminal with its output
 #
 # Usage: run.sh <image>
 # Env:   SMOKE_PREFIX   name prefix for containers/network (default paseo-smoke)
@@ -239,6 +243,67 @@ if [[ "${id_e:-}" == "srv_existing_1" ]]; then pass "e) an existing server-id fi
 else fail "e) existing server-id became '${id_e:-}'"; fi
 if [[ "${id_mode:-}" == "600" ]]; then pass "e) server-id is written with mode 600"
 else fail "e) server-id mode is '${id_mode:-}'"; fi
+
+# --- f) terminals survive daemon restarts and crashes ------------------------------
+# Paseo 0.15+ runs terminals in a terminal worker that checks process identities
+# with procps ps (-p/-A, -ww, -o lstart=,args=,sid=). BusyBox ps has none of
+# these, and the daemon then cannot start at all.
+if docker exec "${ADDON}" sh -c 'LC_ALL=C ps -p 1 -ww -o lstart= -o args=' >/dev/null 2>&1; then
+  pass "f) ps supports -p, -ww and -o lstart=,args= (procps)"
+else fail "f) ps lacks the procps options Paseo needs (-p, -ww, -o lstart=)"; fi
+
+# Prints one word per stage: created, started, restart=<listed>/<alive>/<output>,
+# crash=<listed>/<alive>/<output>, or the stage that failed.
+# shellcheck disable=SC2016  # expanded inside the container
+term_out="$(docker exec "${ADDON}" bash -c '
+  set -u
+  source /run/paseo-ha/daemon.env
+  p() { paseo "$@" --home "${PASEO_HOME}"; }
+  healthy() {
+    for _ in $(seq 1 90); do
+      curl -fs -o /dev/null --max-time 2 http://127.0.0.1:6767/api/health && return 0
+      sleep 1
+    done
+    return 1
+  }
+  state() { # state <program pid> -> listed/alive/output (yes|no each), retried for 15 s
+    local l=no a=no o=no
+    for _ in $(seq 1 15); do
+      p terminal ls --all --json 2>/dev/null | grep -q "\"smoke-term\"" && l=yes
+      kill -0 "$1" 2>/dev/null && a=yes
+      p terminal capture smoke-term 2>/dev/null | grep -q "^SMOKE_TERM_42" && o=yes
+      [ "${l}${a}${o}" = yesyesyes ] && break
+      sleep 1
+    done
+    echo "${l}/${a}/${o}"
+  }
+  cd /tmp
+  p terminal create --cwd /tmp --name smoke-term --json >/dev/null 2>&1 || { echo create-failed; exit 0; }
+  echo created
+  p terminal send-keys smoke-term "echo SMOKE_TERM_\$((40+2)); sleep 7731" Enter >/dev/null 2>&1
+  prog=""
+  for _ in $(seq 1 20); do
+    prog="$(pgrep -f "^sleep 7731$" | head -n1)"
+    [ -n "${prog}" ] && break
+    sleep 0.5
+  done
+  [ -n "${prog}" ] || { echo program-not-started; exit 0; }
+  echo started
+  p daemon restart --timeout 90 --json >/dev/null 2>&1 || { echo restart-failed; exit 0; }
+  healthy || { echo unhealthy-after-restart; exit 0; }
+  echo "restart=$(state "${prog}")"
+  pkill -9 -f "^Paseo (Supervisor|Daemon)$" || { echo crash-kill-failed; exit 0; }
+  sleep 3
+  healthy || { echo unhealthy-after-crash; exit 0; }
+  echo "crash=$(state "${prog}")"
+' 2>&1 || true)"
+term_out="$(echo "${term_out}" | tr '\n' ' ')"
+if [[ "${term_out}" == *"restart=yes/yes/yes"* ]]; then
+  pass "f) a terminal program keeps running across paseo daemon restart, listed with its output"
+else fail "f) terminal across paseo daemon restart (listed/alive/output): ${term_out}"; fi
+if [[ "${term_out}" == *"crash=yes/yes/yes"* ]]; then
+  pass "f) a terminal program keeps running across a daemon crash, listed with its output"
+else fail "f) terminal across a daemon crash (listed/alive/output): ${term_out}"; fi
 
 if [[ "${FAILED}" -ne 0 ]]; then
   log "Smoke test FAILED"

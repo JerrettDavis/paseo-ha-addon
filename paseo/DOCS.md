@@ -82,6 +82,8 @@ verifies the entity state and reports the result — see
 
 Terminals opened from Paseo run inside this container, with the same `HOME` and the same
 environment the agents get, which is where you log agents in and run `ha` yourself.
+Programs in a terminal keep running when the Paseo daemon restarts or crashes. Restarting or
+updating the add-on closes all terminals, because the whole container restarts.
 
 ## Options reference
 
