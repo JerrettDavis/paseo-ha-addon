@@ -8,3 +8,6 @@
 ## 2. Tests
 - [x] 2.1 Smoke check f): `ps` supports the procps options; a terminal program survives `paseo daemon restart` and a SIGKILL crash of the supervisor and daemon, and the new daemon lists the terminal and shows its output
 - [x] 2.2 shellcheck the smoke suite; smoke suite passes on the built image
+
+## 3. Documentation
+- [x] 3.1 paseo/DOCS.md: terminals keep running across a daemon restart or crash; an add-on restart or update closes them
