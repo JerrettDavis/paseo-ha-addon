@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0-1
+
+- Bundled Paseo **0.15.0** (was 0.14.0). New in Paseo: terminal programs keep running when the daemon restarts or crashes, an opt-in Resume agents after restart setting (Host settings, Agents) that continues interrupted agents in their conversations, a host setting to turn off usage checks, and copying files listed in `.worktreeinclude` into new worktrees. It also fixes rewinding Claude conversations and Pi tool-result images going missing.
+- The image now includes procps (full `ps`, `top`, `free`, `pgrep`): Paseo 0.15.0 needs it to start its terminal worker. The ingress adapter needed no change, and there is nothing to do after updating. Restarting or updating the add-on still closes terminals, because the whole container restarts. Paseo 0.15.0 saves the new agent-resume and usage settings in its `config.json`, so to go back to an older add-on version, restore the backup Home Assistant made before this update.
+- Bundled Paseo **0.15.0** and Pi **1.5.0** (Pi and the other npm agents still follow their latest stable release).
+
 ## 0.14.0-1
 
 - Bundled Paseo **0.14.0** (was 0.13.2). New in Paseo: Chat display settings that group tool calls or collapse completed turns, a choice of Enter or Ctrl/Cmd+Enter to send, recalling sent messages with Up and Down, downloadable local speech models in Voice settings, and plugins that can give tools to specific agents. Idle agents now free their runtime after an hour and resume on the next prompt. It also fixes terminal glyph corruption and background Git fetches opening credential prompts.

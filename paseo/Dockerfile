@@ -9,7 +9,7 @@ ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
 # node-gyp).
 # ---------------------------------------------------------------------------
 FROM ${BUILD_FROM} AS build
-ARG PASEO_VERSION=0.14.0
+ARG PASEO_VERSION=0.15.0
 ENV ONNXRUNTIME_NODE_INSTALL=skip \
     npm_config_update_notifier=false \
     npm_config_fund=false \
@@ -65,7 +65,7 @@ RUN set -eu; \
 # Runtime image
 # ---------------------------------------------------------------------------
 FROM ${BUILD_FROM}
-ARG PASEO_VERSION=0.14.0
+ARG PASEO_VERSION=0.15.0
 ENV ONNXRUNTIME_NODE_INSTALL=skip \
     npm_config_update_notifier=false \
     npm_config_fund=false \
@@ -73,7 +73,9 @@ ENV ONNXRUNTIME_NODE_INSTALL=skip \
     PATH=/opt/node/bin:$PATH \
     PASEO_HA_PASEO_VERSION=${PASEO_VERSION}
 
-RUN apk add --no-cache nodejs npm nginx git openssh-client bash curl jq libstdc++ coreutils \
+# procps-ng: Paseo (0.15+) checks process identities with `ps -p/-A -ww -o lstart=,args=,sid=`;
+# BusyBox ps has none of these, and the terminal worker then fails to start the daemon.
+RUN apk add --no-cache nodejs npm nginx git openssh-client bash curl jq libstdc++ coreutils procps-ng \
  && rm -f /etc/nginx/http.d/default.conf
 
 COPY --from=build /opt/node /opt/node
