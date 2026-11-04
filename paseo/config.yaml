@@ -1,13 +1,12 @@
 name: Paseo
-version: "0.15.0-1"
+version: "0.15.0-1-opiha.4"
 slug: paseo
 description: Configure Home Assistant with coding agents (Pi, Claude, Codex, Copilot, OpenCode, Oh My Pi, Muse Code, Antigravity) from the sidebar
-url: https://github.com/farajfarook/paseo-ha-addon
+url: https://github.com/JerrettDavis/paseo-ha-addon
 arch:
   - aarch64
   - amd64
 init: false
-image: ghcr.io/farajfarook/{arch}-addon-paseo
 ingress: true
 panel_title: Paseo
 panel_icon: mdi:robot-outline
@@ -18,18 +17,9 @@ ports_description:
 map:
   - type: homeassistant_config
     read_only: false
-  - type: all_addon_configs
-    read_only: false
   - type: addon_config
     read_only: false
-  - type: share
-    read_only: false
-  - type: ssl
-  - type: media
-  - type: backup
 homeassistant_api: true
-hassio_api: true
-hassio_role: manager
 options:
   workspace: /homeassistant
   git_snapshot: false
@@ -41,6 +31,7 @@ options:
   dictation: false
   voice_mode: false
   speech_provider: local
+  relay: false
 schema:
   workspace: str
   git_snapshot: bool

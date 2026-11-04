@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.15.0-1-opiha.4
+
+- Copilot's glibc platform package is now deleted after every provider install and on every start instead of being omitted from the install, which also stripped other providers' native packages (Codex).
+
+## 0.15.0-1-opiha.3
+
+- Fix the Copilot hold from opiha.2: install it without optional dependencies (the glibc platform binary would shadow the JS build) and add `gcompat` to the image, which its bundled `pty.node` needs to load.
+
+## 0.15.0-1-opiha.2
+
+- Copilot is held at `@github/copilot` 0.0.423, the last plain-JavaScript release. Newer releases are a native binary that aborts on Alpine (musl) with `Node-API symbol ... has not been loaded`. Antigravity is documented as unsupported on musl.
+
+## 0.15.0-1-opiha.1
+
+Fork for the Orange Pi appliance (based on upstream 0.15.0-1). Least-privilege changes:
+
+- No Supervisor `manager` role or Supervisor API; the `ha` CLI no longer works. Core REST/WebSocket access (`homeassistant_api`) remains.
+- Only `/homeassistant` and the add-on's own config folder are mapped. Removed `all_addon_configs`, `/share`, `/ssl`, `/media` and `/backup`.
+- `relay` defaults to `false`.
+- No prebuilt image reference: the image is built from this repository's Dockerfile on the device.
+- The ingress shim also recognises the appliance's `/api/opiha_apps/ingress/<app>` prefix.
+
 ## 0.15.0-1
 
 - Bundled Paseo **0.15.0** (was 0.14.0). New in Paseo: terminal programs keep running when the daemon restarts or crashes, an opt-in Resume agents after restart setting (Host settings, Agents) that continues interrupted agents in their conversations, a host setting to turn off usage checks, and copying files listed in `.worktreeinclude` into new worktrees. It also fixes rewinding Claude conversations and Pi tool-result images going missing.

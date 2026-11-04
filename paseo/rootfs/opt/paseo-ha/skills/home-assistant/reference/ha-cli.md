@@ -1,5 +1,7 @@
 # `ha` CLI recipes
 
+> Not available in this build: the add-on no longer requests the Supervisor `manager` role, so these commands are refused. Use the Core REST/WebSocket API instead (see SKILL.md).
+
 The `ha` command talks to the Supervisor with `$SUPERVISOR_TOKEN` (role: `manager`). Add
 `--raw-json` for JSON output (`ha core info --raw-json | jq .data`).
 

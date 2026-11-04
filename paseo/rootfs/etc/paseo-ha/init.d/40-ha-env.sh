@@ -12,6 +12,11 @@ if [[ -z "${SUPERVISOR_TOKEN:-}" && -r /run/s6/container_environment/SUPERVISOR_
   SUPERVISOR_TOKEN="$(cat /run/s6/container_environment/SUPERVISOR_TOKEN)"
 fi
 
+# The add-on container runs as root, and Claude Code refuses
+# --dangerously-skip-permissions (which Paseo passes) as root unless it is told
+# it is inside a sandbox. The container is that sandbox.
+ph_env_set IS_SANDBOX 1
+
 ph_env_set HASS_SERVER "http://supervisor/core"
 if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
   ph_env_set SUPERVISOR_TOKEN "${SUPERVISOR_TOKEN}"

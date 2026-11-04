@@ -92,7 +92,7 @@ add-on start.
 
 | Option | Type / default | Effect |
 |---|---|---|
-| `workspace` | string, `/homeassistant` | Directory new terminals and agent sessions start in. Created if missing. Set it to another mapped path (e.g. `/share/paseo`) to work somewhere else by default. |
+| `workspace` | string, `/homeassistant` | Directory new terminals and agent sessions start in. Created if missing. Set it to another path (e.g. `/data/paseo`) to work somewhere else by default. |
 | `git_snapshot` | boolean, `false` | Keep `/homeassistant` under git for review and rollback. See [Git snapshots](#git-snapshots-and-rollback). |
 | `providers` | list of `claude`, `codex`, `copilot`, `opencode`, `pi`, `omp`, `muse`, `antigravity`; default `[pi]` | The agent providers to offer, using Paseo's own provider IDs (`omp` is Oh My Pi, `muse` is Muse Code). Selected providers have their CLI installed into `/data/agents` and are enabled in Paseo; every other provider is uninstalled and disabled. `claude`, `codex`, `copilot`, `opencode`, `pi` and `omp` are installed from npm at their latest stable release; `muse` and `antigravity` are not on npm, so their vendor's installer runs once (Muse Code is a ~336 MB download) and the CLI updates itself afterwards. Pi is installed the same way as the npm ones and is selected by default. A working `muse` or `antigravity` CLI is never downloaded again; an npm provider is downloaded again only when a newer stable release is out. A failed install only disables that provider. See [Agent providers](#agent-providers). |
 | `env_vars` | list of `{name, value}`, `[]` | Environment variables exported to the daemon and therefore to every agent — e.g. `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`. **Only the names are logged, never the values.** |
@@ -102,8 +102,8 @@ add-on start.
 | `dictation` | boolean, `false` | Enable speech-to-text dictation in Paseo. |
 | `voice_mode` | boolean, `false` | Enable full voice conversations in Paseo. |
 | `speech_provider` | `local` / `openai`, `local` | Which speech engine backs dictation/voice when they are enabled. `openai` requires `OPENAI_API_KEY` in `env_vars`. |
-| `worktrees_root` | string, empty | Directory where Paseo creates git worktrees, e.g. `/share/paseo-worktrees`. Created if missing. Empty means Paseo's default inside persistent storage (`/data/home/.paseo/worktrees`). |
-| `relay` | boolean, unset | Force Paseo's encrypted relay on or off. Unset leaves the relay under Paseo's own control. See below. |
+| `worktrees_root` | string, empty | Directory where Paseo creates git worktrees, e.g. `/data/paseo-worktrees`. Created if missing. Empty means Paseo's default inside persistent storage (`/data/home/.paseo/worktrees`). |
+| `relay` | boolean, `false` | Paseo's encrypted relay (`relay.paseo.sh`). This fork defaults it to off so no outbound relay connection is made; set `true` to pair devices through it. See below. |
 
 Port **`6767/tcp`** is declared but not published: map it in the **Network** tab only if
 you want direct access from your LAN.
@@ -172,9 +172,9 @@ Two ways to reach Paseo from a phone, tablet or the desktop app:
 | Authentication | Pairing code + Paseo password if you set one | Paseo password, always |
 | Exposure | Outbound-only connection via Paseo's encrypted relay | A LAN port with the web UI and API behind it |
 | Works from | Any network, no port forwarding | Only where the HA host is reachable |
-| Control | Unset `relay` = Paseo decides; `true`/`false` forces it | Independent of relay |
+| Control | This fork sets `relay: false`; set `true` to enable, or remove the option to let Paseo decide | Independent of relay |
 
-Leave `relay` **unset** if you want the state to be yours to toggle inside Paseo (it
+Remove the `relay` option (leave it **unset**) if you want the state to be yours to toggle inside Paseo (it
 persists across restarts). Set it to `true`/`false` to lock it from the add-on options.
 
 For the direct port, also add any public DNS name you use to `hostnames`, otherwise the
@@ -280,7 +280,7 @@ interactive login. `gh` and git over HTTPS use it. Prefer a
 [fine-grained personal access token](https://github.com/settings/personal-access-tokens)
 limited to the repositories agents need.
 
-**SSH keys you already have.** Private keys in `/homeassistant/.ssh` and `/share/.ssh` are
+**SSH keys you already have.** Private keys in `/homeassistant/.ssh` are
 picked up on every start and offered by `ssh` (and so `git`). They are used where they
 are, never copied:
 
@@ -295,7 +295,7 @@ are, never copied:
 
   ```
   Host gitea.local
-    IdentityFile /share/.ssh/gitea_deploy
+    IdentityFile /homeassistant/.ssh/gitea_deploy
   ```
 
 **A new key just for Paseo.** In a Paseo terminal run
@@ -354,12 +354,7 @@ pi update --extensions           # update packages that are not pinned to a vers
 | Path in the container | Access | What it is |
 |---|---|---|
 | `/homeassistant` | read-write | Your live Home Assistant configuration (`configuration.yaml`, `automations.yaml`, `scripts.yaml`, `scenes.yaml`, `packages/`, `blueprints/`, `custom_components/`, `secrets.yaml`, `.storage/`). Changes affect the running home. |
-| `/addon_configs` | read-write | Configuration folders of **all** other add-ons (Zigbee2MQTT, Mosquitto, ESPHome, ...). |
-| `/config` | read-write | This add-on's own editable agent-config folder (see below). On the host it is `/addon_configs/<repo>_paseo`, so File Editor, Samba and the Studio Code Server see it. |
-| `/share` | read-write | The add-on shared folder — convenient for worktrees, exports and files to hand between add-ons. |
-| `/ssl` | read-only | TLS certificates. Agents can inspect them, never change them. |
-| `/media` | read-only | The HA media library. |
-| `/backup` | read-only | HA backups. |
+| `/config` | read-write | This add-on's own editable agent-config folder (see below). On the host it is this add-on's own `addon_configs` folder. |
 | `/data` | private | Add-on state: Paseo home (`/data/home/.paseo`), all agent credentials and sessions, installed agents (`/data/agents`), GitHub CLI login (`/data/home/.config/gh`), SSH keys and known hosts made in the add-on (`/data/home/.ssh`), Pi packages (`/data/home/.pi/agent/npm`) and the record of which defaults were offered (`/data/paseo-ha/pi-packages.offered`), skill-link manifest. Not shown by File Editor/Samba, but part of HA backups. |
 
 ## Editable agent configuration
@@ -409,9 +404,7 @@ exports it to the daemon and every agent:
 - Core WebSocket API: `ws://supervisor/core/websocket` — registries, dashboards and other
   things that are not in YAML. The image ships a helper for it:
   `paseo-ha-ws '{"type":"config/entity_registry/list"}'`.
-- The `ha` CLI (Supervisor access, `manager` role): `ha core check`, `ha core logs`,
-  `ha core restart`, `ha apps logs <slug>` (in `ha` CLI 5.x `ha addons` is its deprecated
-  alias), `ha backups new`, `ha supervisor logs`.
+- The `ha` CLI and Supervisor API are **not available** in this fork (no `manager` role). Use `POST /api/config/core/check_config`, `GET /api/error_log` and the `homeassistant.restart` service.
 - Restarting Core does not restart this add-on, so an agent can restart HA and keep
   reading the log afterwards.
 
@@ -455,10 +448,10 @@ for any change:
    IDs from the API instead of guessing them.
 2. Snapshot — commit if `git_snapshot` is on, otherwise suggest a backup for big changes.
 3. Edit the narrowest file, keeping your style.
-4. `check_config` (or `ha core check`) — must report valid.
+4. `check_config` (`POST /api/config/core/check_config`) — must report valid.
 5. Reload the narrowest domain (`automation.reload`, `template.reload`, …). Restart Core
    only when the change really needs it, and only after asking.
-6. Verify via states and `ha core logs`.
+6. Verify via states and `GET /api/error_log`.
 7. Commit the result, or roll back and tell you what broke.
 
 Hard rules the guidance imposes: never print or copy values from `secrets.yaml` or any
@@ -516,14 +509,13 @@ Read this section before you enable the add-on. It is what makes agents useful, 
 makes them dangerous.
 
 - **Agents run as root** inside the add-on container, and **read-write mount** the Home
-  Assistant configuration, all other add-ons' configuration folders and `/share`. A change
+  Assistant configuration. A change
   an agent makes is a change to your live home, made with the permissions of the HA system
   user. (Root is used because the mapped HA folders are root-owned; a non-root add-on user
   could not write them without changing ownership of your config.)
-- **Agents hold a Home Assistant Core token and Supervisor `manager` access.** With it they
+- **Agents hold a Home Assistant Core API token** (no Supervisor `manager` role in this fork). With it they
   can read every entity state, call any service, check and reload configuration, read Core
-  and add-on logs, restart Home Assistant Core, and manage other add-ons. `manager` does not
-  include host/OS operations (that would be `admin`, which this add-on does not request).
+  and restart Home Assistant Core. They cannot manage other add-ons or the host.
 - **This lowers the add-on's security rating.** HA shows it as a higher-privilege add-on;
   that is accurate and intentional. It is why the guidance, the ask-before-restart rule and
   git snapshots exist.
@@ -541,14 +533,13 @@ makes them dangerous.
   They are never logged, but any agent (and anything it prints from the environment) can
   read them.
 - **Git credentials are shared by every agent.** A GitHub CLI login, a `GH_TOKEN` and any
-  SSH key the add-on finds (including those in `/homeassistant/.ssh` and `/share/.ssh`) can
+  SSH key the add-on finds (including those in `/homeassistant/.ssh`) can
   be used by any agent session to read and push to every repository they reach. A full
   `gh auth login` reaches all of your repositories. Prefer a fine-grained token or a
   per-repository deploy key.
 - **Prompt injection is the real risk.** Agents read files that external systems can
-  influence (logs, webhooks, device payloads). The mitigations are narrow: read-only
-  `/ssl`, `/media`, `/backup`; the ask-before-restart and ask-before-touching-other-addons
-  rules; and, for anything serious, `git_snapshot` plus a backup.
+  influence (logs, webhooks, device payloads). The mitigations are narrow: only
+  `/homeassistant` and `/config` are mounted; the ask-before-restart rule; and, for anything serious, `git_snapshot` plus a backup.
 
 Recommendations: keep a current HA backup, enable `git_snapshot`, give the panel only to
 people you trust with your home, and review agent commits.
@@ -622,6 +613,8 @@ session.
   published for glibc only (the aarch64 package has no musl build either) and refuses to
   load on musl, even with `gcompat` (checked on amd64). Selecting `omp`
   is safe: the install is attempted, the failure is logged and Oh My Pi stays disabled.
+- **Copilot is held at `@github/copilot` 0.0.423.** Releases from 1.0 on are a native binary that aborts on the Alpine (musl) image (`Node-API symbol ... has not been loaded`). 0.0.423 is the last plain-JavaScript release and runs under the image's Node. Remove the hold in `20-providers.sh` once Copilot ships a musl-compatible build.
+- **Antigravity (`antigravity`) does not run on the Alpine (musl) images.** Its `agy` CLI and Paseo's plugin need native Node-API add-ons that don't load on musl; the provider shows `agy not found on PATH` and fails.
 - **Claude Code refuses `--dangerously-skip-permissions` when run as root**, so its
   permission prompts stay on. Approve them interactively, or use Pi.
 - **No multi-user isolation.** Everyone using the panel shares one Paseo daemon, one set of
