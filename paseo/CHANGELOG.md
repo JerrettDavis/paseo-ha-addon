@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0-1-opiha.2
+
+- Copilot is held at `@github/copilot` 0.0.423, the last plain-JavaScript release. Newer releases are a native binary that aborts on Alpine (musl) with `Node-API symbol ... has not been loaded`. Antigravity is documented as unsupported on musl.
+
 ## 0.15.0-1-opiha.1
 
 Fork for the Orange Pi appliance (based on upstream 0.15.0-1). Least-privilege changes:

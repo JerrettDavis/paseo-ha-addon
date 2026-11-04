@@ -107,8 +107,12 @@ declare -A SCRIPT_ENV=(
   [muse]="MUSE_INSTALL_DIR=${PROVIDER_BIN_DIR[muse]}"
 )
 # Maintainer hold: package name -> exact version installed instead of `latest`.
-# Empty by default. Use it when a new agent release breaks with the pinned Paseo.
+# Use it when a new agent release breaks with the pinned Paseo.
+# @github/copilot 1.x ships only a native binary that aborts on the Alpine (musl)
+# image (Node-API symbols are not loaded). 0.0.423 is the last release that is
+# plain JavaScript, and it runs ACP under the image's Node.
 declare -A PACKAGE_HOLD=(
+  [@github/copilot]="0.0.423"
 )
 
 mkdir -p "${AGENTS_DIR}"

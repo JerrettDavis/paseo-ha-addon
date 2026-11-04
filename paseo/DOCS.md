@@ -613,6 +613,8 @@ session.
   published for glibc only (the aarch64 package has no musl build either) and refuses to
   load on musl, even with `gcompat` (checked on amd64). Selecting `omp`
   is safe: the install is attempted, the failure is logged and Oh My Pi stays disabled.
+- **Copilot is held at `@github/copilot` 0.0.423.** Releases from 1.0 on are a native binary that aborts on the Alpine (musl) image (`Node-API symbol ... has not been loaded`). 0.0.423 is the last plain-JavaScript release and runs under the image's Node. Remove the hold in `20-providers.sh` once Copilot ships a musl-compatible build.
+- **Antigravity (`antigravity`) does not run on the Alpine (musl) images.** Its `agy` CLI and Paseo's plugin need native Node-API add-ons that don't load on musl; the provider shows `agy not found on PATH` and fails.
 - **Claude Code refuses `--dangerously-skip-permissions` when run as root**, so its
   permission prompts stay on. Approve them interactively, or use Pi.
 - **No multi-user isolation.** Everyone using the panel shares one Paseo daemon, one set of
