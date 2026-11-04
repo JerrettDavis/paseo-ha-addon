@@ -227,13 +227,15 @@ resolve_pkg() {
 
 # install_specs <id> <specs> -> npm install and check --version; output in $log.
 install_specs() {
-  local id="$1" specs="$2" spec
+  local id="$1" specs="$2" spec extra=""
+  # Copilot's optional platform package is a glibc binary that would shadow the JS build.
+  [[ "${id}" == "copilot" ]] && extra="--omit=optional"
   for spec in ${specs}; do
     in_csv "${spec}" "${PASEO_HA_TEST_FAIL_SPEC:-}" && { echo "test seam: ${spec} fails" >"${log}"; return 1; }
   done
   in_csv "${id}" "${PASEO_HA_TEST_FAIL_INSTALL:-}" && { echo "test seam: ${id} fails" >"${log}"; return 1; }
   # shellcheck disable=SC2086  # specs is a space-separated list
-  timeout -k 10 "${INSTALL_TIMEOUT}" npm install --prefix "${AGENTS_DIR}" --no-audit --no-fund --omit=dev --fetch-retries=1 --fetch-timeout=60000 ${specs} >"${log}" 2>&1 \
+  timeout -k 10 "${INSTALL_TIMEOUT}" npm install --prefix "${AGENTS_DIR}" --no-audit --no-fund --omit=dev ${extra} --fetch-retries=1 --fetch-timeout=60000 ${specs} >"${log}" 2>&1 \
     && provider_version "${id}" >>"${log}" 2>&1
 }
 

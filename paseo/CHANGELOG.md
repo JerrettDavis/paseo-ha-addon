@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0-1-opiha.3
+
+- Fix the Copilot hold from opiha.2: install it without optional dependencies (the glibc platform binary would shadow the JS build) and add `gcompat` to the image, which its bundled `pty.node` needs to load.
+
 ## 0.15.0-1-opiha.2
 
 - Copilot is held at `@github/copilot` 0.0.423, the last plain-JavaScript release. Newer releases are a native binary that aborts on Alpine (musl) with `Node-API symbol ... has not been loaded`. Antigravity is documented as unsupported on musl.

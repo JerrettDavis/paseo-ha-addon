@@ -75,7 +75,8 @@ ENV ONNXRUNTIME_NODE_INSTALL=skip \
 
 # procps-ng: Paseo (0.15+) checks process identities with `ps -p/-A -ww -o lstart=,args=,sid=`;
 # BusyBox ps has none of these, and the terminal worker then fails to start the daemon.
-RUN apk add --no-cache nodejs npm nginx git openssh-client bash curl jq libstdc++ coreutils procps-ng \
+# gcompat: provides the glibc loader that Copilot 0.0.423's prebuilt pty.node asks for.
+RUN apk add --no-cache nodejs npm nginx git openssh-client bash curl jq libstdc++ gcompat coreutils procps-ng \
  && rm -f /etc/nginx/http.d/default.conf
 
 COPY --from=build /opt/node /opt/node
