@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.0-1-opiha.1
+
+Fork for the Orange Pi appliance (based on upstream 0.15.0-1). Least-privilege changes:
+
+- No Supervisor `manager` role or Supervisor API; the `ha` CLI no longer works. Core REST/WebSocket access (`homeassistant_api`) remains.
+- Only `/homeassistant` and the add-on's own config folder are mapped. Removed `all_addon_configs`, `/share`, `/ssl`, `/media` and `/backup`.
+- `relay` defaults to `false`.
+- No prebuilt image reference: the image is built from this repository's Dockerfile on the device.
+- The ingress shim also recognises the appliance's `/api/opiha_apps/ingress/<app>` prefix.
+
 ## 0.15.0-1
 
 - Bundled Paseo **0.15.0** (was 0.14.0). New in Paseo: terminal programs keep running when the daemon restarts or crashes, an opt-in Resume agents after restart setting (Host settings, Agents) that continues interrupted agents in their conversations, a host setting to turn off usage checks, and copying files listed in `.worktreeinclude` into new worktrees. It also fixes rewinding Claude conversations and Pi tool-result images going missing.

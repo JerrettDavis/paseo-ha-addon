@@ -14,19 +14,16 @@ steps, and follow the workflow below for every change.
 | Path | Access | Contents |
 |---|---|---|
 | `/homeassistant` | rw | HA config: `configuration.yaml`, `automations.yaml`, `scripts.yaml`, `scenes.yaml`, `packages/`, `blueprints/`, `custom_components/`, `secrets.yaml`, `.storage/` |
-| `/addon_configs/<slug>/` | rw | Configs of other add-ons (e.g. Zigbee2MQTT, Mosquitto, ESPHome) |
-| `/share` | rw | Files shared between add-ons |
-| `/ssl`, `/media`, `/backup` | ro | Certificates, media, backups |
 | `/config` | rw | Paseo's own agent config (user skills, shared `AGENTS.md`) |
 
 Details: [reference/config-layout.md](reference/config-layout.md).
 
 ## Access that is already set up
 
-- `$SUPERVISOR_TOKEN`: bearer token for the Core API (via the Supervisor proxy) and the Supervisor API.
+- `$SUPERVISOR_TOKEN`: bearer token for the Core API (via the Supervisor proxy).
 - `$HASS_SERVER` = `http://supervisor/core`, `$HASS_TOKEN` = same token (for tools that use these names).
 - Core REST API: `http://supervisor/core/api/...`; WebSocket API: `ws://supervisor/core/websocket`.
-- `ha` CLI (Supervisor): `ha core check|logs|restart`, `ha addons ...`, `ha backups new`.
+- The `ha` CLI and Supervisor API are not available in this build (least privilege). Use `POST /api/config/core/check_config`, `GET /api/error_log` and the `homeassistant.restart` service instead.
 - HA MCP tools (`homeassistant` server) may be available in Pi, Claude Code, Codex and OpenCode when the
   user enabled HA's "Model Context Protocol Server" integration. They control **exposed entities only**
   and cannot edit config. Prefer them for simple entity control; use the API for everything else.

@@ -36,7 +36,8 @@
 (function () {
   "use strict";
   try {
-    var match = window.location.pathname.match(/^\/api\/hassio_ingress\/[^/]+/);
+    // HA Supervisor ingress, or the Orange Pi appliance's add-on ingress.
+    var match = window.location.pathname.match(/^\/api\/(?:hassio_ingress|opiha_apps\/ingress)\/[^/]+/);
     var prefix = (window.__PASEO_INGRESS_PREFIX__ || (match && match[0]) || "").replace(/\/+$/, "");
     if (!prefix) {
       return; // not behind ingress; nothing to do

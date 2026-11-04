@@ -33,7 +33,8 @@ NET="${PREFIX_NAME}-net"
 ADDON="${PREFIX_NAME}-addon"
 MOCK="${PREFIX_NAME}-mock"
 ADDON_IP=172.30.33.10
-INGRESS_PATH="/api/hassio_ingress/test"
+INGRESS_PATH="${INGRESS_PATH:-/api/hassio_ingress/test}"
+export INGRESS_PATH
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 WORK="$(mktemp -d)"
@@ -83,12 +84,12 @@ MSYS_NO_PATHCONV=1 docker run -d --name "${ADDON}" --network "${NET}" --ip "${AD
 log "Waiting up to ${TIMEOUT}s for the add-on and the mock ingress"
 for _ in $(seq 1 "${TIMEOUT}"); do
   if docker exec "${ADDON}" curl -fs -o /dev/null --max-time 2 http://127.0.0.1:6767/api/health 2>/dev/null \
-    && curl -fs -o /dev/null --max-time 2 "http://localhost:${PORT}/api/hassio_ingress/test/api/health" 2>/dev/null; then
+    && curl -fs -o /dev/null --max-time 2 "http://localhost:${PORT}${INGRESS_PATH}/api/health" 2>/dev/null; then
     break
   fi
   sleep 2
 done
-if ! curl -fs -o /dev/null --max-time 2 "http://localhost:${PORT}/api/hassio_ingress/test/api/health"; then
+if ! curl -fs -o /dev/null --max-time 2 "http://localhost:${PORT}${INGRESS_PATH}/api/health"; then
   fail "mock ingress did not become healthy"
   exit 1
 fi
@@ -108,7 +109,7 @@ const os = require("os");
 
 const PORT = process.env.PORT || "18080";
 const BASE = `http://localhost:${PORT}`;
-const PREFIX = "/api/hassio_ingress/test";
+const PREFIX = process.env.INGRESS_PATH || "/api/hassio_ingress/test";
 const results = [];
 const escapes = [];
 const errors = [];
