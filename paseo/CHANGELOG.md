@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0-1-opiha.4
+
+- Copilot's glibc platform package is now deleted after every provider install and on every start instead of being omitted from the install, which also stripped other providers' native packages (Codex).
+
 ## 0.15.0-1-opiha.3
 
 - Fix the Copilot hold from opiha.2: install it without optional dependencies (the glibc platform binary would shadow the JS build) and add `gcompat` to the image, which its bundled `pty.node` needs to load.

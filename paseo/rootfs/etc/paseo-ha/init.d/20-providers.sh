@@ -225,18 +225,23 @@ resolve_pkg() {
   printf '%s@%s' "${name}" "${ver}"
 }
 
+# Copilot's optional glibc platform package would shadow its JS build (the npm
+# loader prefers it) and aborts on musl. Any npm install on the shared tree
+# can bring it back, so this runs after every install and on every start.
+prune_copilot_native() {
+  rm -rf "${AGENTS_DIR}"/node_modules/@github/copilot-{linux,darwin,win32}-*
+}
+
 # install_specs <id> <specs> -> npm install and check --version; output in $log.
 install_specs() {
-  local id="$1" specs="$2" spec extra=""
-  # Copilot's optional platform package is a glibc binary that would shadow the JS build.
-  [[ "${id}" == "copilot" ]] && extra="--omit=optional"
+  local id="$1" specs="$2" spec
   for spec in ${specs}; do
     in_csv "${spec}" "${PASEO_HA_TEST_FAIL_SPEC:-}" && { echo "test seam: ${spec} fails" >"${log}"; return 1; }
   done
   in_csv "${id}" "${PASEO_HA_TEST_FAIL_INSTALL:-}" && { echo "test seam: ${id} fails" >"${log}"; return 1; }
   # shellcheck disable=SC2086  # specs is a space-separated list
-  timeout -k 10 "${INSTALL_TIMEOUT}" npm install --prefix "${AGENTS_DIR}" --no-audit --no-fund --omit=dev ${extra} --fetch-retries=1 --fetch-timeout=60000 ${specs} >"${log}" 2>&1 \
-    && provider_version "${id}" >>"${log}" 2>&1
+  timeout -k 10 "${INSTALL_TIMEOUT}" npm install --prefix "${AGENTS_DIR}" --no-audit --no-fund --omit=dev --fetch-retries=1 --fetch-timeout=60000 ${specs} >"${log}" 2>&1 \
+    && { prune_copilot_native; provider_version "${id}" >>"${log}" 2>&1; }
 }
 
 # install_script <id> -> download and run the vendor's installer into the
@@ -291,6 +296,7 @@ for id in "${!STAMPED[@]}"; do
   fi
 done
 
+prune_copilot_native
 # --- Bring each selected provider to its resolved version. A script provider is
 # installed once into its own directory and updates itself afterwards, so its
 # stamp carries whatever version its CLI reports; an npm provider is compared
