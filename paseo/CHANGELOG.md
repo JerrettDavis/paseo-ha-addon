@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0-1-opiha.5
+
+- Set `IS_SANDBOX=1` in the daemon environment so Claude Code can run with `--dangerously-skip-permissions` as root inside the container.
+
 ## 0.15.0-1-opiha.4
 
 - Copilot's glibc platform package is now deleted after every provider install and on every start instead of being omitted from the install, which also stripped other providers' native packages (Codex).
